@@ -3,12 +3,12 @@ This is the official git repository hosting the source code for the
 [ScratchJr](http://scratchjr.org/) project.
 
 ScratchJr can be built both for iOS and Android.
-A pure-web version or Chrome-app version is planned to follow at some point in the future.
+A pure-web version is planned to follow at some point in the future.
 
 Platform | Status
 -------- | -------------
 iOS      | Released in App Store
-Android  | Released in Google Play and Amazon store
+Android  | Released in Google Play
 
 ## Release Schedule
 
@@ -33,33 +33,50 @@ This repository has the following directory structure:
   * <tt>ScratchJr/</tt> - Android Studio Project for ScratchJr Android Application
 * <tt>bin/</tt> - Build scripts and other executables
 * <tt>doc/</tt> - Developer Documentation
-* <tt>ios/</tt> - XCode project for iOS build. (Make sure to open <tt>ScratchJr.xcworkspace</tt> not <tt>ScratchJr.xcodeproj</tt>)
+* <tt>ios/</tt> - Xcode project for iOS build. (Make sure to open <tt>ScratchJr.xcworkspace</tt> not <tt>ScratchJr.xcodeproj</tt>)
 
 ## Building ScratchJr
-To build the Android version, you need to have a system equipped with Android Studio. To build the iOS version, you need to have a Mac with XCode.
 
-Ensure you have node and npm [installed](http://blog.npmjs.org/post/85484771375/how-to-install-npm).
+### Initial setup
 
-With all of the code checked out, you must install npm dependencies for bundling the JavaScript:
-* <tt>npm install</tt>
+Regardless of whether you are doing iOS development or Android development, you should do these steps.
 
-The build caches .png files out of the .svg files to improve performance. To enable this build step, you need to install a few dependencies.
+*These instructions assume you are building both versions on Mac OSX, with [Homebrew](http://brew.sh) installed.*
 
-On Ubuntu:
+1. Clone or update the code for this repo
+2. Ensure you have node and npm [installed](http://blog.npmjs.org/post/85484771375/how-to-install-npm).
+3. Run <tt>sudo easy_install pysvg</tt> to install python svg libraries
+4. Run <tt>brew install librsvg</tt> to install commandline `rsvg-convert`
+5. Run <tt>brew install imagemagick</tt> to install commandline `magick`
+6. In the top level of the scratchjr repo directory, install npm dependencies for bundling the JavaScript: <tt>npm install</tt>
 
-* Run <tt>sudo easy_install pysvg</tt> to install python svg libraries
-* Run <tt>sudo apt-get install librsvg2-bin</tt> to install rsvg-convert
-* Run <tt>sudo apt-get install imagemagick</tt> to install ImageMagick
+### Analytics
+ScratchJr uses the Firebase SDK to record analytics for the app. Scratch Team developers should look for
+the configuration files in the Scratch Devs Vault. If you're not on the Scratch Team, then you'll need to
+set up your own [app analytics](https://firebase.google.com/products/analytics) with Google Firebase. It's free. Firebase will generate the configuration files for you to download.
 
-On OS X:
+1. Place the `google-services.json` file in `editions/free/android-resources`
+2. Place the `GoogleService-Info.plist` file in `editions/free/ios-resources`
 
-* Install [Homebrew](http://brew.sh).
-* Run <tt>sudo easy_install pysvg</tt> to install python svg libraries
-* Run <tt>brew install librsvg</tt> to install rsvg-convert
-* Run <tt>brew install imagemagick</tt> to install ImageMagick
-* Run <tt>brew install cocoapods</tt> to install CocoaPods if you are building for iOS
+### iOS
 
-Once these are installed, select the appropriate target in XCode or the appropriate flavor/build variant in Android Studio. To build in Android Studio, open the project <tt>android/ScratchJr</tt>. To build for iOS in XCode, open <tt>ios/ScratchJr.xcworkspace</tt> as ScratchJr uses CocoaPods. Before you build for iOS, you will need to run <tt>pod install</tt> to install the Firebase Analytics dependencies.
+1. To build the iOS version, you need to have a Mac with Xcode
+2. Run <tt>brew install cocoapods</tt> to install CocoaPods
+3. Run <tt>pod install</tt> to install the Firebase Analytics dependencies
+4. Open Xcode
+5. In Xcode, open <tt>ios/ScratchJr.xcworkspace</tt>
+
+### Android
+
+1. Install or update Android Studio
+2. In Android Studio, open the project <tt>android/ScratchJr</tt>
+3. Choose the appropriate flavor/build variant in Android Studio
+
+*Note: you can still do Android development on Ubuntu. Instead of the install commands above, run:*
+
+1. <tt>sudo easy_install pysvg</tt> to install python svg libraries
+2. <tt>sudo apt-get install librsvg2-bin</tt> to install rsvg-convert
+3. <tt>sudo apt-get install imagemagick</tt> to install ImageMagick
 
 ## Where and how to make changes
 

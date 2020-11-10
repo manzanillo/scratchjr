@@ -7,8 +7,8 @@ import Block from '../blocks/Block';
 import BlockSpecs from '../blocks/BlockSpecs';
 import ScriptsPane from './ScriptsPane';
 import Undo from './Undo';
-import iOS from '../../iPad/iOS';
-import MediaLib from '../../iPad/MediaLib';
+import OS from '../../tablet/OS';
+import MediaLib from '../../tablet/MediaLib';
 import Events from '../../utils/Events';
 import Rectangle from '../../geom/Rectangle';
 import DrawPath from '../../utils/DrawPath';
@@ -498,7 +498,7 @@ export default class Palette {
             (sc.flowCaret.next != null) || (sc.flowCaret.inside != null))) {
             return 'scripts';
         }
-        if (box2.overlapElemBy(box, 0.66) && box2.hitRect({x: el.left / scale, y: el.top / scale})) {
+        if (box2.overlapElemBy(box, 0.4) && box2.hitRect({x: el.left / scale, y: el.top / scale})) {
             return 'palette';
         }
         if (pt && box2.hitRect(pt)) {
@@ -582,7 +582,7 @@ export default class Palette {
         e.preventDefault();
         switch (Palette.getLandingPlace(element, e)) {
         case 'scripts':
-            iOS.analyticsEvent('editor', 'new_block', element.owner.blocktype);
+            OS.analyticsEvent('editor', 'new_block_' + element.owner.blocktype);
             var sc = ScratchJr.getActiveScript();
             var dx = localx(sc, element.left);
             var dy = localy(sc, element.top);

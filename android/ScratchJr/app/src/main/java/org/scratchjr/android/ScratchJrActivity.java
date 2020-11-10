@@ -4,6 +4,7 @@ import android.Manifest;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
@@ -39,6 +40,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Vector;
 
 /**
  * Main activity for Scratch Jr., consisting of a full-screen landscape WebView.
@@ -102,6 +105,7 @@ public class ScratchJrActivity
     private final int SCRATCHJR_CAMERA_MIC_PERMISSION = 1;
     public int cameraPermissionResult = PackageManager.PERMISSION_DENIED;
     public int micPermissionResult = PackageManager.PERMISSION_DENIED;
+    public int readExtPermissionResult = PackageManager.PERMISSION_DENIED;
 
     /* Firebase analytics tracking */
     private FirebaseAnalytics _FirebaseAnalytics;
@@ -146,9 +150,8 @@ public class ScratchJrActivity
         CookieManager.getInstance().setAcceptCookie(true);
         CookieManager.setAcceptFileSchemeCookies(true);
 
-        String PROJECT_MIMETYPE = getApplicationContext().getString(R.string.share_mimetype);
         Intent it = getIntent();
-        if (it != null && it.getType() != null && it.getType().equals(PROJECT_MIMETYPE)) {
+        if (it != null && it.getData() != null) {
             receiveProject(it.getData());
         }
 
@@ -169,27 +172,35 @@ public class ScratchJrActivity
                 }, 1000);
             }
         });
-
         requestPermissions();
     }
 
+     /*
+    Ask for all permissions when ScratchJr is first launched so that we are not asking a 5-7 year old to give permission
+     */
     public void requestPermissions() {
         cameraPermissionResult = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA);
         micPermissionResult = ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO);
+        readExtPermissionResult = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE);
 
-        String[] desiredPermissions;
-        if (cameraPermissionResult != PackageManager.PERMISSION_GRANTED
-                && micPermissionResult != PackageManager.PERMISSION_GRANTED) {
-            desiredPermissions = new String[]{
-                    Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO
-            };
-        } else if (cameraPermissionResult != PackageManager.PERMISSION_GRANTED) {
-            desiredPermissions = new String[]{Manifest.permission.CAMERA};
-        } else if (micPermissionResult != PackageManager.PERMISSION_GRANTED) {
-            desiredPermissions = new String[]{Manifest.permission.RECORD_AUDIO};
-        } else {
+        if (cameraPermissionResult == PackageManager.PERMISSION_GRANTED
+            && micPermissionResult == PackageManager.PERMISSION_GRANTED
+            && readExtPermissionResult == PackageManager.PERMISSION_GRANTED) {
             return;
         }
+
+        Vector<String> tmp = new Vector<String>(3);
+        if (cameraPermissionResult != PackageManager.PERMISSION_GRANTED) {
+            tmp.add(Manifest.permission.CAMERA);
+        }
+        if (micPermissionResult != PackageManager.PERMISSION_GRANTED) {
+            tmp.add(Manifest.permission.RECORD_AUDIO);
+        }
+        if (readExtPermissionResult != PackageManager.PERMISSION_GRANTED) {
+            tmp.add(Manifest.permission.READ_EXTERNAL_STORAGE);
+        }
+        Object[] tmpArray = tmp.toArray();
+        String[] desiredPermissions = Arrays.copyOf(tmpArray, tmpArray.length, String[].class);
 
         ActivityCompat.requestPermissions(this,
                 desiredPermissions,
@@ -207,6 +218,9 @@ public class ScratchJrActivity
                 }
                 if (permission.equals(Manifest.permission.RECORD_AUDIO)) {
                     micPermissionResult = grantResults[permissionId];
+                }
+                if (permission.equals(Manifest.permission.READ_EXTERNAL_STORAGE)) {
+                    readExtPermissionResult = grantResults[permissionId];
                 }
                 permissionId++;
             }
@@ -291,17 +305,30 @@ public class ScratchJrActivity
     @Override
     protected void onNewIntent(Intent it) {
         super.onNewIntent(it);
-        String PROJECT_MIMETYPE = getApplicationContext().getString(R.string.share_mimetype);
-        if (it != null && it.getType() != null && it.getType().equals(PROJECT_MIMETYPE)) {
+        if (it != null && it.getData() != null) {
             receiveProject(it.getData());
         }
     }
 
     private void receiveProject(Uri projectUri) {
+        String PROJECT_EXTENSION = getApplicationContext().getString(R.string.share_extension_filter);
+        String scheme = projectUri.getScheme();
+        Log.i(LOG_TAG, "receiveProject(scheme): " + scheme);
+        Log.i(LOG_TAG, "receiveProject(path): " + projectUri.getPath());
+
+        // if scheme isn't file or content, skip import
+        if (scheme == null || !(scheme.equals(ContentResolver.SCHEME_FILE) || scheme.equals(ContentResolver.SCHEME_CONTENT))) {
+            return;
+        }
+        // if scheme is file, then skip if filename doesn't have scratchjr project extension
+        if (scheme.equals(ContentResolver.SCHEME_FILE) && !projectUri.getPath().matches(PROJECT_EXTENSION)) {
+            return;
+        }
         // Read the project one byte at a time into a buffer
         ByteArrayOutputStream projectData = new ByteArrayOutputStream();
         try {
             InputStream is = getContentResolver().openInputStream(projectUri);
+
             byte[] readByte = new byte[1];
             while ((is.read(readByte)) == 1) {
                 projectData.write(readByte[0]);
@@ -315,7 +342,7 @@ public class ScratchJrActivity
         }
         // We send the project Base64-encoded to JavaScript where it's processed and unpacked
         String base64Project = Base64.encodeToString(projectData.toByteArray(), Base64.DEFAULT);
-        runJavaScript("iOS.loadProjectFromSjr('" + base64Project + "');");
+        runJavaScript("OS.loadProjectFromSjr('" + base64Project + "');");
     }
 
     public RelativeLayout getContainer() {
@@ -485,10 +512,9 @@ public class ScratchJrActivity
      */
     public void logAnalyticsEvent(String category, String action, String label) {
         Bundle params = new Bundle();
-        params.putString(FirebaseAnalytics.Param.ITEM_ID, action);
         params.putString(FirebaseAnalytics.Param.ITEM_CATEGORY, category);
         params.putString(FirebaseAnalytics.Param.ITEM_NAME, label);
-        _FirebaseAnalytics.logEvent(FirebaseAnalytics.Event.VIEW_ITEM, params);
+        _FirebaseAnalytics.logEvent(action, params);
     }
 
     /**
@@ -497,6 +523,15 @@ public class ScratchJrActivity
      */
     public void setAnalyticsPlacePref(String place) {
         _FirebaseAnalytics.setUserProperty("place_preference", place);
+    }
+
+    /**
+     * Record a user property
+     * @param key like "school"
+     * @param value like "Central High"
+     */
+    public void setAnalyticsPref(String key, String value) {
+        _FirebaseAnalytics.setUserProperty(key, value);
     }
 
     public void translateAndScaleRectToContainerCoords(RectF rect, float devicePixelRatio) {
