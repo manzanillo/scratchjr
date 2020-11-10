@@ -251,6 +251,7 @@ export default class Prims {
     }
 
     static Down (strip) {
+        var s = strip.spr;
         var num = Number(strip.thisblock.getArgValue()) * 24;
         var distance = Math.abs(num);
         if (num == 0) {
@@ -267,9 +268,11 @@ export default class Prims {
             strip.distance = 0;
         } else if (strip.distance < 0) {
             strip.distance = distance;
+            var sinalpha = Math.sin((s.angle / 360) * 2 * 3.14);
+            var cosalpha = Math.cos((s.angle / 360) * 2 * 3.14);
             strip.vector = {
-                x: 0,
-                y: 2
+              x: sinalpha * (-2),
+              y: cosalpha * 2
             };
             Prims.setTime(strip);
         }
@@ -277,6 +280,7 @@ export default class Prims {
     }
 
     static Up (strip) {
+        var s = strip.spr;
         var num = Number(strip.thisblock.getArgValue()) * 24;
         var distance = Math.abs(num);
         if (num == 0) {
@@ -290,9 +294,11 @@ export default class Prims {
             return;
         } else if (strip.distance < 0) {
             strip.distance = distance;
+            var sinalpha = Math.sin((s.angle / 360) * 2 * 3.14);
+            var cosalpha = Math.cos((s.angle / 360) * 2 * 3.14);
             strip.vector = {
-                x: 0,
-                y: -2
+              x: sinalpha * 2,
+              y: cosalpha * (-2)
             };
             Prims.setTime(strip);
         }
@@ -318,9 +324,11 @@ export default class Prims {
             return;
         } else if (strip.distance < 0) {
             strip.distance = distance;
+            var sinalpha = Math.sin((s.angle / 360) * 2 * 3.14);
+            var cosalpha = Math.cos((s.angle / 360) * 2 * 3.14);
             strip.vector = {
-                x: 2,
-                y: 0
+              x: cosalpha * 2,
+              y: sinalpha * 2,
             };
             Prims.setTime(strip);
         }
@@ -348,9 +356,11 @@ export default class Prims {
             strip.distance = 0;
         } else if (strip.distance < 0) {
             strip.distance = distance;
+            var sinalpha = Math.sin((s.angle / 360) * 2 * 3.14);
+            var cosalpha = Math.cos((s.angle / 360) * 2 * 3.14);
             strip.vector = {
-                x: -2,
-                y: 0
+              x: cosalpha * (-2),
+              y: sinalpha * (-2),
             };
             Prims.setTime(strip);
         }
